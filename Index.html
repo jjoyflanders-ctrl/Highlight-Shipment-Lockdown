@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Shipment Lockdown</title>
+<style>
+body {
+  margin:0;
+  background: radial-gradient(circle at center,#0f402b,#02160f);
+  font-family: Arial, sans-serif;
+  color:white;
+  overflow:hidden;
+}
+
+.screen {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+
+.hidden { display:none; }
+
+button {
+  padding:15px 40px;
+  font-size:20px;
+  border-radius:40px;
+  border:none;
+  background:#2be47d;
+  color:#02160f;
+  cursor:pointer;
+  animation: breathe 2s infinite;
+}
+
+@keyframes breathe {
+  0% { transform:scale(1); }
+  50% { transform:scale(1.08); }
+  100% { transform:scale(1); }
+}
+
+canvas {
+  background:#022a1c;
+}
+
+#hud {
+  position:absolute;
+  top:10px;
+  right:20px;
+  font-size:20px;
+}
+
+.heart {
+  color:#ff5b5b;
+  font-size:24px;
+}
+
+.toast {
+  position:absolute;
+  top:60px;
+  right:20px;
+  background:#2be47d;
+  color:#02160f;
+  padding:10px 15px;
+  border-radius:10px;
+  display:none;
+}
+
+.report {
+  background:#063825;
+  padding:40px;
+  border-radius:20px;
+  width:500px;
+}
+.bar {
+  height:20px;
+  border-radius:10px;
+  margin-bottom:20px;
+}
+.green { background:#2be47d; }
+.blue { background:#5bbcff; }
+.orange { background:#ffb347; }
+
+</style>
+</head>
+<body>
+
+<div id="start" class="screen">
+  <h1>Shipment Lockdown</h1>
+  <p>Secure it here... or regret it there.</p>
+  <button onclick="startGame()">START</button>
+</div>
+
+<div id="game" class="hidden">
+  <canvas id="canvas" width="400" height="600"></canvas>
+  <div id="hud"></div>
+  <div id="toast" class="toast"></div>
+</div>
+
+<div id="report" class="screen hidden">
+  <div class="report">
+    <h2>Shipment Report Card</h2>
+    <p id="grade"></p>
+    <div>Safety</div>
+    <div class="bar green" id="safety"></div>
+    <div>Cost</div>
+    <div class="bar orange" id="cost"></div>
+    <div>Customer Happiness</div>
+    <div class="bar blue" id="happy"></div>
+    <p>Press Space to Play Again</p>
+  </div>
+</div>
+
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+
+let player = { x:180, y:500, w:40, h:60 };
+let obstacles = [];
+let hearts = 3;
+let speed = 4;
+let running = false;
+let score = 0;
+
+function startGame() {
+  document.getElementById("start").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+  hearts = 3;
+  obstacles = [];
+  score = 0;
+  running = true;
+  update();
+}
+
+function updateHUD() {
+  document.getElementById("hud").innerHTML =
+    "Hearts: " + "❤️".repeat(hearts);
+}
+
+function spawnObstacle() {
+  let lane = Math.floor(Math.random()*3);
+  obstacles.push({
+    x: 60 + lane*110,
+    y: -60,
+    w: 40,
+    h: 40
+  });
+}
+
+function update() {
+  if (!running) return;
+
+  ctx.clearRect(0,0,400,600);
+
+  ctx.fillStyle="#2be47d";
+  ctx.fillRect(player.x,player.y,player.w,player.h);
+
+  obstacles.forEach(o=>{
+    o.y += speed;
+    ctx.fillStyle="#ff5b5b";
+    ctx.fillRect(o.x,o.y,o.w,o.h);
+
+    if (o.y > 600) score++;
+
+    if (player.x < o.x+o.w &&
+        player.x+player.w > o.x &&
+        player.y < o.y+o.h &&
+        player.y+player.h > o.y) {
+      hearts--;
+      showToast("Bump! Watch the load!");
+      o.y = 700;
+      if (hearts <=0) endGame();
+    }
+  });
+
+  obstacles = obstacles.filter(o=>o.y<700);
+
+  if (Math.random()<0.02) spawnObstacle();
+
+  updateHUD();
+  requestAnimationFrame(update);
+}
+
+function showToast(text){
+  let t=document.getElementById("toast");
+  t.innerText=text;
+  t.style.display="block";
+  setTimeout(()=>t.style.display="none",1500);
+}
+
+function endGame(){
+  running=false;
+  document.getElementById("game").classList.add("hidden");
+  document.getElementById("report").classList.remove("hidden");
+
+  let gradeVal = Math.max(0,hearts*30 + score/2);
+  let letter = gradeVal>80?"A":gradeVal>70?"B":gradeVal>60?"C":"D";
+
+  document.getElementById("grade").innerText =
+    "Final Grade: "+letter+" ("+Math.floor(gradeVal)+"%)";
+
+  document.getElementById("safety").style.width=gradeVal+"%";
+  document.getElementById("cost").style.width=(80-gradeVal/2)+"%";
+  document.getElementById("happy").style.width=(gradeVal-10)+"%";
+}
+
+document.addEventListener("keydown",e=>{
+  if (e.key==="ArrowLeft") player.x-=40;
+  if (e.key==="ArrowRight") player.x+=40;
+  if (e.key===" ") location.reload();
+});
+</script>
+
+</body>
+</html>
