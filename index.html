@@ -13,6 +13,7 @@
     overflow:hidden;
   }
 
+  /* Screens */
   .screen{
     position:absolute;
     inset:0;
@@ -24,7 +25,12 @@
     padding:24px;
     text-align:center;
   }
-  .hidden{ display:none; }
+  .hidden{ display:none !important; }
+
+  /* Force proper stacking order */
+  #start { z-index: 30; }
+  #report{ z-index: 30; }
+  #game  { z-index: 20; }
 
   h1{ margin:0; font-size:46px; letter-spacing:0.5px; }
   p{ margin:0; max-width:720px; line-height:1.35; opacity:0.92; }
@@ -134,7 +140,7 @@
     font-weight:900;
     letter-spacing:1px;
   }
-  #overlay.hidden{ display:none; }
+  #overlay.hidden{ display:none !important; }
 
   /* Report */
   .reportCard{
@@ -146,10 +152,7 @@
     box-shadow: 0 20px 60px rgba(0,0,0,0.35);
     text-align:left;
   }
-  .reportCard h2{
-    margin:0 0 6px 0;
-    font-size:28px;
-  }
+  .reportCard h2{ margin:0 0 6px 0; font-size:28px; }
   .muted{ opacity:0.9; margin-bottom:16px; }
 
   .row{
@@ -169,27 +172,13 @@
     overflow:hidden;
     border:1px solid rgba(255,255,255,0.10);
   }
-  .bar{
-    height:100%;
-    width:0%;
-    border-radius:999px;
-  }
+  .bar{ height:100%; width:0%; border-radius:999px; }
   .green{ background:#2be47d; }
   .blue{ background:#5bbcff; }
   .orange{ background:#ffb347; }
 
-  .reportActions{
-    display:flex;
-    gap:12px;
-    margin-top:18px;
-    flex-wrap:wrap;
-  }
-  .secondary{
-    background: rgba(255,255,255,0.12);
-    color:#fff;
-    animation:none;
-    font-weight:700;
-  }
+  .reportActions{ display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; }
+  .secondary{ background: rgba(255,255,255,0.12); color:#fff; animation:none; font-weight:700; }
 </style>
 </head>
 <body>
@@ -244,9 +233,9 @@
 </div>
 
 <script>
-  const startScreen = document.getElementById("start");
-  const gameScreen  = document.getElementById("game");
-  const reportScreen= document.getElementById("report");
+  const startScreen  = document.getElementById("start");
+  const gameScreen   = document.getElementById("game");
+  const reportScreen = document.getElementById("report");
 
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
@@ -257,25 +246,13 @@
   const overlayEl  = document.getElementById("overlay");
   const pauseBtn   = document.getElementById("pauseBtn");
 
-  // Game state
   let player, obstacles, hearts, score, running, paused;
   let speed, spawnRate;
   let lastTime = 0;
 
-  const LANES = [90, 190, 290]; // x centers for 3 lanes
+  const LANES = [90, 190, 290];
 
-  function resetState(){
-    player = { lane: 1, x: LANES[1]-22, y: canvas.height - 120, w: 44, h: 70 };
-    obstacles = [];
-    hearts = 3;
-    score = 0;
-    speed = 260;       // px/sec
-    spawnRate = 0.9;   // spawns per second (approx)
-    running = false;
-    paused = false;
-    lastTime = performance.now();
-    updateHUD();
-  }
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
   function showScreen(which){
     startScreen.classList.add("hidden");
@@ -284,11 +261,43 @@
     which.classList.remove("hidden");
   }
 
-  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
-
   function updateHUD(){
     heartsPill.textContent = "Hearts: " + "❤️".repeat(hearts);
     scorePill.textContent = "Score: " + score;
+  }
+
+  function drawIdle(){
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    ctx.fillStyle="#022a1c";
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle="#ffffff";
+    for(let i=1;i<3;i++){
+      const x = (LANES[i-1] + LANES[i]) / 2;
+      ctx.fillRect(x, 0, 4, canvas.height);
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle="#2be47d";
+    ctx.font="900 28px Arial";
+    ctx.textAlign="center";
+    ctx.fillText("Press START", canvas.width/2, canvas.height/2);
+    ctx.font="700 16px Arial";
+    ctx.fillStyle="rgba(255,255,255,0.85)";
+    ctx.fillText("Then dodge the obstacles", canvas.width/2, canvas.height/2 + 30);
+  }
+
+  function resetState(){
+    player = { lane: 1, x: LANES[1]-22, y: canvas.height - 120, w: 44, h: 70 };
+    obstacles = [];
+    hearts = 3;
+    score = 0;
+    speed = 260;
+    spawnRate = 0.9;
+    running = false;
+    paused = false;
+    lastTime = performance.now();
+    updateHUD();
   }
 
   function showToast(text){
@@ -302,12 +311,10 @@
     overlayEl.textContent = text;
     overlayEl.classList.remove("hidden");
   }
-  function hideOverlay(){
-    overlayEl.classList.add("hidden");
-  }
+  function hideOverlay(){ overlayEl.classList.add("hidden"); }
 
   function countdownThenRun(){
-    let steps = ["READY", "SET", "GO!"];
+    const steps = ["READY","SET","GO!"];
     let i = 0;
     setOverlay(steps[i]);
     const tick = () => {
@@ -349,46 +356,31 @@
 
   function spawnObstacle(){
     const lane = Math.floor(Math.random()*3);
-    obstacles.push({
-      lane,
-      x: LANES[lane] - 20,
-      y: -70,
-      w: 40,
-      h: 40,
-      hit: false
-    });
+    obstacles.push({ lane, x: LANES[lane]-20, y:-70, w:40, h:40, hit:false });
   }
 
   function rectsOverlap(a,b){
-    return a.x < b.x + b.w &&
-           a.x + a.w > b.x &&
-           a.y < b.y + b.h &&
-           a.y + a.h > b.y;
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   }
 
   function draw(){
     ctx.clearRect(0,0,canvas.width, canvas.height);
-
-    // roadway
-    ctx.fillStyle = "#022a1c";
+    ctx.fillStyle="#022a1c";
     ctx.fillRect(0,0,canvas.width, canvas.height);
 
-    // lane guides
     ctx.globalAlpha = 0.25;
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle="#ffffff";
     for(let i=1;i<3;i++){
       const x = (LANES[i-1] + LANES[i]) / 2;
       ctx.fillRect(x, 0, 4, canvas.height);
     }
     ctx.globalAlpha = 1;
 
-    // player truck
-    ctx.fillStyle = "#2be47d";
+    ctx.fillStyle="#2be47d";
     ctx.fillRect(player.x, player.y, player.w, player.h);
 
-    // obstacles
     obstacles.forEach(o=>{
-      ctx.fillStyle = "#ff5b5b";
+      ctx.fillStyle="#ff5b5b";
       ctx.fillRect(o.x, o.y, o.w, o.h);
     });
   }
@@ -397,25 +389,18 @@
     running = false;
     paused = false;
 
-    // grade calc: reward score, punish damage
-    const safety = clamp((hearts / 3) * 100, 0, 100);
-    const performance = clamp((score / 35) * 100, 0, 100); // score ~35 feels like "full"
-    const gradeVal = clamp((safety * 0.65) + (performance * 0.35), 0, 100);
+    const safety = clamp((hearts/3)*100, 0, 100);
+    const performance = clamp((score/35)*100, 0, 100);
+    const gradeVal = clamp((safety*0.65)+(performance*0.35), 0, 100);
 
-    const letter =
-      gradeVal >= 90 ? "A" :
-      gradeVal >= 80 ? "B" :
-      gradeVal >= 70 ? "C" :
-      gradeVal >= 60 ? "D" : "F";
-
+    const letter = gradeVal>=90?"A":gradeVal>=80?"B":gradeVal>=70?"C":gradeVal>=60?"D":"F";
     showScreen(reportScreen);
 
     document.getElementById("grade").textContent =
       `Final Grade: ${letter} (${Math.round(gradeVal)}%) • Score: ${score} • Hearts Left: ${hearts}`;
 
-    // derived metrics (clamped)
-    const cost = clamp(100 - (100 - gradeVal) * 0.9, 0, 100);       // higher grade => better cost control
-    const happy = clamp(gradeVal - (3 - hearts) * 8, 0, 100);       // bumps hurt happiness
+    const cost  = clamp(100 - (100-gradeVal)*0.9, 0, 100);
+    const happy = clamp(gradeVal - (3-hearts)*8, 0, 100);
 
     const setBar = (id, val, labelId) => {
       const v = clamp(val, 0, 100);
@@ -434,23 +419,17 @@
     const dt = (now - lastTime) / 1000;
     lastTime = now;
 
-    // spawn based on time (approx)
-    if(Math.random() < spawnRate * dt){
-      spawnObstacle();
-    }
+    if(Math.random() < spawnRate * dt) spawnObstacle();
 
-    // move obstacles
     obstacles.forEach(o=>{
       o.y += speed * dt;
 
-      // scoring when passed
       if(!o.scored && o.y > canvas.height){
         o.scored = true;
         score++;
       }
 
-      // collision
-      if(!o.hit && rectsOverlap(player, o)){
+      if(!o.hit && rectsOverlap(player,o)){
         o.hit = true;
         hearts--;
         showToast("Bump! Watch the load!");
@@ -462,49 +441,41 @@
       }
     });
 
-    // clean
     obstacles = obstacles.filter(o => o.y < canvas.height + 120);
 
     updateHUD();
     draw();
-
     requestAnimationFrame(loop);
   }
 
   // Controls
-  document.addEventListener("keydown", (e)=>{
-    if(reportScreen && !reportScreen.classList.contains("hidden")) return;
+  document.addEventListener("keydown",(e)=>{
+    if(!reportScreen.classList.contains("hidden")) return;
 
-    if(e.key === "ArrowLeft"){
-      player.lane = clamp(player.lane - 1, 0, 2);
-      player.x = LANES[player.lane] - player.w/2;
+    if(e.key==="ArrowLeft"){
+      player.lane = clamp(player.lane-1, 0, 2);
+      player.x = LANES[player.lane]-player.w/2;
     }
-    if(e.key === "ArrowRight"){
-      player.lane = clamp(player.lane + 1, 0, 2);
-      player.x = LANES[player.lane] - player.w/2;
+    if(e.key==="ArrowRight"){
+      player.lane = clamp(player.lane+1, 0, 2);
+      player.x = LANES[player.lane]-player.w/2;
     }
-    if(e.key.toLowerCase() === "p"){
-      togglePause();
-    }
+    if(e.key.toLowerCase()==="p") togglePause();
   });
 
   pauseBtn.addEventListener("click", togglePause);
-
   document.getElementById("startBtn").addEventListener("click", startGame);
-
-  document.getElementById("playAgain").addEventListener("click", ()=>{
-    startGame();
-  });
-
+  document.getElementById("playAgain").addEventListener("click", startGame);
   document.getElementById("backToStart").addEventListener("click", ()=>{
     resetState();
     showScreen(startScreen);
   });
 
-  // init
+  // ✅ HARD FORCE INITIAL VIEW:
   resetState();
+  showScreen(startScreen);     // always start here
+  drawIdle();                  // never show a blank canvas
 </script>
 
 </body>
 </html>
-
