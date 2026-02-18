@@ -32,6 +32,14 @@
   #report{ z-index: 30; }
   #game  { z-index: 20; }
 
+  /* 🔒 Make the START screen impossible to be white/blank */
+  #start{
+    background: radial-gradient(circle at center,#0f402b,#02160f);
+  }
+  #start, #start *{
+    color:#fff !important;
+  }
+
   h1{ margin:0; font-size:46px; letter-spacing:0.5px; }
   p{ margin:0; max-width:720px; line-height:1.35; opacity:0.92; }
 
@@ -41,7 +49,7 @@
     border-radius:40px;
     border:none;
     background:#2be47d;
-    color:#02160f;
+    color:#02160f !important;
     cursor:pointer;
     animation: breathe 2s infinite;
     font-weight:700;
@@ -178,16 +186,31 @@
   .orange{ background:#ffb347; }
 
   .reportActions{ display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; }
-  .secondary{ background: rgba(255,255,255,0.12); color:#fff; animation:none; font-weight:700; }
+  .secondary{ background: rgba(255,255,255,0.12); color:#fff !important; animation:none; font-weight:700; }
+
+  /* Start panel card */
+  .startPanel{
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.14);
+    padding: 26px 24px;
+    border-radius: 22px;
+    width: min(620px, 92vw);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
 </style>
 </head>
 <body>
 
 <div id="start" class="screen">
-  <h1>Shipment Lockdown</h1>
-  <p>Secure it here… or regret it there.</p>
-  <button id="startBtn">START</button>
-  <p style="opacity:.75;font-size:14px">Arrow keys to switch lanes • P to pause</p>
+  <div class="startPanel">
+    <h1>Shipment Lockdown</h1>
+    <p>Secure it here… or regret it there.</p>
+    <div style="height:12px"></div>
+    <button id="startBtn">START (v4)</button>
+    <p style="opacity:.75;font-size:14px;margin-top:12px">
+      Arrow keys to switch lanes • P to pause
+    </p>
+  </div>
 </div>
 
 <div id="game" class="hidden">
@@ -469,12 +492,13 @@
   document.getElementById("backToStart").addEventListener("click", ()=>{
     resetState();
     showScreen(startScreen);
+    drawIdle();
   });
 
   // ✅ HARD FORCE INITIAL VIEW:
   resetState();
-  showScreen(startScreen);     // always start here
-  drawIdle();                  // never show a blank canvas
+  showScreen(startScreen);
+  drawIdle();
 </script>
 
 </body>
