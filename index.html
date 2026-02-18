@@ -1,216 +1,510 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Shipment Lockdown</title>
 <style>
-body {
-  margin:0;
-  background: radial-gradient(circle at center,#0f402b,#02160f);
-  font-family: Arial, sans-serif;
-  color:white;
-  overflow:hidden;
-}
+  body{
+    margin:0;
+    background: radial-gradient(circle at center,#0f402b,#02160f);
+    font-family: Arial, sans-serif;
+    color:#fff;
+    overflow:hidden;
+  }
 
-.screen {
-  position:absolute;
-  inset:0;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-}
+  .screen{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    padding:24px;
+    text-align:center;
+  }
+  .hidden{ display:none; }
 
-.hidden { display:none; }
+  h1{ margin:0; font-size:46px; letter-spacing:0.5px; }
+  p{ margin:0; max-width:720px; line-height:1.35; opacity:0.92; }
 
-button {
-  padding:15px 40px;
-  font-size:20px;
-  border-radius:40px;
-  border:none;
-  background:#2be47d;
-  color:#02160f;
-  cursor:pointer;
-  animation: breathe 2s infinite;
-}
+  button{
+    padding:15px 40px;
+    font-size:20px;
+    border-radius:40px;
+    border:none;
+    background:#2be47d;
+    color:#02160f;
+    cursor:pointer;
+    animation: breathe 2s infinite;
+    font-weight:700;
+  }
+  button:active{ transform:scale(0.98); }
+  @keyframes breathe{
+    0%{ transform:scale(1); }
+    50%{ transform:scale(1.08); }
+    100%{ transform:scale(1); }
+  }
 
-@keyframes breathe {
-  0% { transform:scale(1); }
-  50% { transform:scale(1.08); }
-  100% { transform:scale(1); }
-}
+  #game{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
 
-canvas {
-  background:#022a1c;
-}
+  .gameWrap{
+    position:relative;
+    width:min(420px, 92vw);
+    height:min(680px, 86vh);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    background:#022a1c;
+  }
 
-#hud {
-  position:absolute;
-  top:10px;
-  right:20px;
-  font-size:20px;
-}
+  canvas{
+    width:100%;
+    height:100%;
+    display:block;
+    background:#022a1c;
+  }
 
-.heart {
-  color:#ff5b5b;
-  font-size:24px;
-}
+  #hud{
+    position:absolute;
+    top:10px;
+    left:12px;
+    right:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size:16px;
+    pointer-events:none;
+  }
 
-.toast {
-  position:absolute;
-  top:60px;
-  right:20px;
-  background:#2be47d;
-  color:#02160f;
-  padding:10px 15px;
-  border-radius:10px;
-  display:none;
-}
+  .hudLeft{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    font-weight:700;
+  }
 
-.report {
-  background:#063825;
-  padding:40px;
-  border-radius:20px;
-  width:500px;
-}
-.bar {
-  height:20px;
-  border-radius:10px;
-  margin-bottom:20px;
-}
-.green { background:#2be47d; }
-.blue { background:#5bbcff; }
-.orange { background:#ffb347; }
+  .hudPill{
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding:8px 10px;
+    border-radius:999px;
+    backdrop-filter: blur(6px);
+  }
 
+  #pauseBtn{
+    pointer-events:auto;
+    animation:none;
+    padding:8px 12px;
+    font-size:14px;
+    border-radius:999px;
+    background: rgba(43,228,125,0.95);
+  }
+
+  #toast{
+    position:absolute;
+    top:56px;
+    left:12px;
+    background:#2be47d;
+    color:#02160f;
+    padding:10px 12px;
+    border-radius:12px;
+    display:none;
+    font-weight:700;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  }
+
+  #overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: rgba(0,0,0,0.25);
+    backdrop-filter: blur(2px);
+    font-size:54px;
+    font-weight:900;
+    letter-spacing:1px;
+  }
+  #overlay.hidden{ display:none; }
+
+  /* Report */
+  .reportCard{
+    width:min(620px, 92vw);
+    background:#063825;
+    border:1px solid rgba(255,255,255,0.12);
+    padding:28px;
+    border-radius:22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    text-align:left;
+  }
+  .reportCard h2{
+    margin:0 0 6px 0;
+    font-size:28px;
+  }
+  .muted{ opacity:0.9; margin-bottom:16px; }
+
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin:10px 0 6px 0;
+    font-weight:700;
+  }
+
+  .track{
+    width:100%;
+    height:18px;
+    border-radius:999px;
+    background: rgba(255,255,255,0.10);
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,0.10);
+  }
+  .bar{
+    height:100%;
+    width:0%;
+    border-radius:999px;
+  }
+  .green{ background:#2be47d; }
+  .blue{ background:#5bbcff; }
+  .orange{ background:#ffb347; }
+
+  .reportActions{
+    display:flex;
+    gap:12px;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+  .secondary{
+    background: rgba(255,255,255,0.12);
+    color:#fff;
+    animation:none;
+    font-weight:700;
+  }
 </style>
 </head>
 <body>
 
 <div id="start" class="screen">
   <h1>Shipment Lockdown</h1>
-  <p>Secure it here... or regret it there.</p>
-  <button onclick="startGame()">START</button>
+  <p>Secure it here… or regret it there.</p>
+  <button id="startBtn">START</button>
+  <p style="opacity:.75;font-size:14px">Arrow keys to switch lanes • P to pause</p>
 </div>
 
 <div id="game" class="hidden">
-  <canvas id="canvas" width="400" height="600"></canvas>
-  <div id="hud"></div>
-  <div id="toast" class="toast"></div>
+  <div class="gameWrap">
+    <canvas id="canvas" width="420" height="680"></canvas>
+
+    <div id="hud">
+      <div class="hudLeft">
+        <div class="hudPill" id="heartsPill">Hearts: ❤️❤️❤️</div>
+        <div class="hudPill" id="scorePill">Score: 0</div>
+      </div>
+      <button id="pauseBtn" type="button">Pause</button>
+    </div>
+
+    <div id="toast"></div>
+    <div id="overlay" class="hidden"></div>
+  </div>
 </div>
 
 <div id="report" class="screen hidden">
-  <div class="report">
+  <div class="reportCard">
     <h2>Shipment Report Card</h2>
-    <p id="grade"></p>
-    <div>Safety</div>
-    <div class="bar green" id="safety"></div>
-    <div>Cost</div>
-    <div class="bar orange" id="cost"></div>
-    <div>Customer Happiness</div>
-    <div class="bar blue" id="happy"></div>
-    <p>Press Space to Play Again</p>
+    <div class="muted" id="grade"></div>
+
+    <div class="row"><span>Safety</span><span id="safetyVal">0%</span></div>
+    <div class="track"><div class="bar green" id="safety"></div></div>
+
+    <div class="row"><span>Cost Control</span><span id="costVal">0%</span></div>
+    <div class="track"><div class="bar orange" id="cost"></div></div>
+
+    <div class="row"><span>Customer Happiness</span><span id="happyVal">0%</span></div>
+    <div class="track"><div class="bar blue" id="happy"></div></div>
+
+    <p class="muted" style="margin-top:14px">
+      Tip: Fewer bumps = fewer returns, fewer claims, fewer “where is my pallet?!” emails.
+    </p>
+
+    <div class="reportActions">
+      <button id="playAgain">Play Again</button>
+      <button class="secondary" id="backToStart">Back to Start</button>
+    </div>
   </div>
 </div>
 
 <script>
-let canvas = document.getElementById("canvas");
-let ctx = canvas.getContext("2d");
+  const startScreen = document.getElementById("start");
+  const gameScreen  = document.getElementById("game");
+  const reportScreen= document.getElementById("report");
 
-let player = { x:180, y:500, w:40, h:60 };
-let obstacles = [];
-let hearts = 3;
-let speed = 4;
-let running = false;
-let score = 0;
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
 
-function startGame() {
-  document.getElementById("start").classList.add("hidden");
-  document.getElementById("game").classList.remove("hidden");
-  hearts = 3;
-  obstacles = [];
-  score = 0;
-  running = true;
-  update();
-}
+  const heartsPill = document.getElementById("heartsPill");
+  const scorePill  = document.getElementById("scorePill");
+  const toastEl    = document.getElementById("toast");
+  const overlayEl  = document.getElementById("overlay");
+  const pauseBtn   = document.getElementById("pauseBtn");
 
-function updateHUD() {
-  document.getElementById("hud").innerHTML =
-    "Hearts: " + "❤️".repeat(hearts);
-}
+  // Game state
+  let player, obstacles, hearts, score, running, paused;
+  let speed, spawnRate;
+  let lastTime = 0;
 
-function spawnObstacle() {
-  let lane = Math.floor(Math.random()*3);
-  obstacles.push({
-    x: 60 + lane*110,
-    y: -60,
-    w: 40,
-    h: 40
-  });
-}
+  const LANES = [90, 190, 290]; // x centers for 3 lanes
 
-function update() {
-  if (!running) return;
+  function resetState(){
+    player = { lane: 1, x: LANES[1]-22, y: canvas.height - 120, w: 44, h: 70 };
+    obstacles = [];
+    hearts = 3;
+    score = 0;
+    speed = 260;       // px/sec
+    spawnRate = 0.9;   // spawns per second (approx)
+    running = false;
+    paused = false;
+    lastTime = performance.now();
+    updateHUD();
+  }
 
-  ctx.clearRect(0,0,400,600);
+  function showScreen(which){
+    startScreen.classList.add("hidden");
+    gameScreen.classList.add("hidden");
+    reportScreen.classList.add("hidden");
+    which.classList.remove("hidden");
+  }
 
-  ctx.fillStyle="#2be47d";
-  ctx.fillRect(player.x,player.y,player.w,player.h);
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
-  obstacles.forEach(o=>{
-    o.y += speed;
-    ctx.fillStyle="#ff5b5b";
-    ctx.fillRect(o.x,o.y,o.w,o.h);
+  function updateHUD(){
+    heartsPill.textContent = "Hearts: " + "❤️".repeat(hearts);
+    scorePill.textContent = "Score: " + score;
+  }
 
-    if (o.y > 600) score++;
+  function showToast(text){
+    toastEl.textContent = text;
+    toastEl.style.display = "block";
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toastEl.style.display="none", 1400);
+  }
 
-    if (player.x < o.x+o.w &&
-        player.x+player.w > o.x &&
-        player.y < o.y+o.h &&
-        player.y+player.h > o.y) {
-      hearts--;
-      showToast("Bump! Watch the load!");
-      o.y = 700;
-      if (hearts <=0) endGame();
+  function setOverlay(text){
+    overlayEl.textContent = text;
+    overlayEl.classList.remove("hidden");
+  }
+  function hideOverlay(){
+    overlayEl.classList.add("hidden");
+  }
+
+  function countdownThenRun(){
+    let steps = ["READY", "SET", "GO!"];
+    let i = 0;
+    setOverlay(steps[i]);
+    const tick = () => {
+      i++;
+      if(i < steps.length){
+        setOverlay(steps[i]);
+        setTimeout(tick, 650);
+      }else{
+        hideOverlay();
+        running = true;
+        paused = false;
+        pauseBtn.textContent = "Pause";
+        lastTime = performance.now();
+        requestAnimationFrame(loop);
+      }
+    };
+    setTimeout(tick, 650);
+  }
+
+  function startGame(){
+    resetState();
+    showScreen(gameScreen);
+    countdownThenRun();
+  }
+
+  function togglePause(){
+    if(!running) return;
+    paused = !paused;
+    if(paused){
+      setOverlay("PAUSED");
+      pauseBtn.textContent = "Resume";
+    }else{
+      hideOverlay();
+      pauseBtn.textContent = "Pause";
+      lastTime = performance.now();
+      requestAnimationFrame(loop);
+    }
+  }
+
+  function spawnObstacle(){
+    const lane = Math.floor(Math.random()*3);
+    obstacles.push({
+      lane,
+      x: LANES[lane] - 20,
+      y: -70,
+      w: 40,
+      h: 40,
+      hit: false
+    });
+  }
+
+  function rectsOverlap(a,b){
+    return a.x < b.x + b.w &&
+           a.x + a.w > b.x &&
+           a.y < b.y + b.h &&
+           a.y + a.h > b.y;
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+
+    // roadway
+    ctx.fillStyle = "#022a1c";
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+
+    // lane guides
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = "#ffffff";
+    for(let i=1;i<3;i++){
+      const x = (LANES[i-1] + LANES[i]) / 2;
+      ctx.fillRect(x, 0, 4, canvas.height);
+    }
+    ctx.globalAlpha = 1;
+
+    // player truck
+    ctx.fillStyle = "#2be47d";
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+
+    // obstacles
+    obstacles.forEach(o=>{
+      ctx.fillStyle = "#ff5b5b";
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+    });
+  }
+
+  function endGame(){
+    running = false;
+    paused = false;
+
+    // grade calc: reward score, punish damage
+    const safety = clamp((hearts / 3) * 100, 0, 100);
+    const performance = clamp((score / 35) * 100, 0, 100); // score ~35 feels like "full"
+    const gradeVal = clamp((safety * 0.65) + (performance * 0.35), 0, 100);
+
+    const letter =
+      gradeVal >= 90 ? "A" :
+      gradeVal >= 80 ? "B" :
+      gradeVal >= 70 ? "C" :
+      gradeVal >= 60 ? "D" : "F";
+
+    showScreen(reportScreen);
+
+    document.getElementById("grade").textContent =
+      `Final Grade: ${letter} (${Math.round(gradeVal)}%) • Score: ${score} • Hearts Left: ${hearts}`;
+
+    // derived metrics (clamped)
+    const cost = clamp(100 - (100 - gradeVal) * 0.9, 0, 100);       // higher grade => better cost control
+    const happy = clamp(gradeVal - (3 - hearts) * 8, 0, 100);       // bumps hurt happiness
+
+    const setBar = (id, val, labelId) => {
+      const v = clamp(val, 0, 100);
+      document.getElementById(id).style.width = v + "%";
+      document.getElementById(labelId).textContent = Math.round(v) + "%";
+    };
+
+    setBar("safety", safety, "safetyVal");
+    setBar("cost", cost, "costVal");
+    setBar("happy", happy, "happyVal");
+  }
+
+  function loop(now){
+    if(!running || paused) return;
+
+    const dt = (now - lastTime) / 1000;
+    lastTime = now;
+
+    // spawn based on time (approx)
+    if(Math.random() < spawnRate * dt){
+      spawnObstacle();
+    }
+
+    // move obstacles
+    obstacles.forEach(o=>{
+      o.y += speed * dt;
+
+      // scoring when passed
+      if(!o.scored && o.y > canvas.height){
+        o.scored = true;
+        score++;
+      }
+
+      // collision
+      if(!o.hit && rectsOverlap(player, o)){
+        o.hit = true;
+        hearts--;
+        showToast("Bump! Watch the load!");
+        if(hearts <= 0){
+          updateHUD();
+          draw();
+          endGame();
+        }
+      }
+    });
+
+    // clean
+    obstacles = obstacles.filter(o => o.y < canvas.height + 120);
+
+    updateHUD();
+    draw();
+
+    requestAnimationFrame(loop);
+  }
+
+  // Controls
+  document.addEventListener("keydown", (e)=>{
+    if(reportScreen && !reportScreen.classList.contains("hidden")) return;
+
+    if(e.key === "ArrowLeft"){
+      player.lane = clamp(player.lane - 1, 0, 2);
+      player.x = LANES[player.lane] - player.w/2;
+    }
+    if(e.key === "ArrowRight"){
+      player.lane = clamp(player.lane + 1, 0, 2);
+      player.x = LANES[player.lane] - player.w/2;
+    }
+    if(e.key.toLowerCase() === "p"){
+      togglePause();
     }
   });
 
-  obstacles = obstacles.filter(o=>o.y<700);
+  pauseBtn.addEventListener("click", togglePause);
 
-  if (Math.random()<0.02) spawnObstacle();
+  document.getElementById("startBtn").addEventListener("click", startGame);
 
-  updateHUD();
-  requestAnimationFrame(update);
-}
+  document.getElementById("playAgain").addEventListener("click", ()=>{
+    startGame();
+  });
 
-function showToast(text){
-  let t=document.getElementById("toast");
-  t.innerText=text;
-  t.style.display="block";
-  setTimeout(()=>t.style.display="none",1500);
-}
+  document.getElementById("backToStart").addEventListener("click", ()=>{
+    resetState();
+    showScreen(startScreen);
+  });
 
-function endGame(){
-  running=false;
-  document.getElementById("game").classList.add("hidden");
-  document.getElementById("report").classList.remove("hidden");
-
-  let gradeVal = Math.max(0,hearts*30 + score/2);
-  let letter = gradeVal>80?"A":gradeVal>70?"B":gradeVal>60?"C":"D";
-
-  document.getElementById("grade").innerText =
-    "Final Grade: "+letter+" ("+Math.floor(gradeVal)+"%)";
-
-  document.getElementById("safety").style.width=gradeVal+"%";
-  document.getElementById("cost").style.width=(80-gradeVal/2)+"%";
-  document.getElementById("happy").style.width=(gradeVal-10)+"%";
-}
-
-document.addEventListener("keydown",e=>{
-  if (e.key==="ArrowLeft") player.x-=40;
-  if (e.key==="ArrowRight") player.x+=40;
-  if (e.key===" ") location.reload();
-});
+  // init
+  resetState();
 </script>
 
 </body>
 </html>
+
